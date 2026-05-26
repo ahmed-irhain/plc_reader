@@ -1,0 +1,25 @@
+{
+  "name": "plc_reader",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/ahmed-irhain/plc_reader#readme",
+  "bugs": {
+    "url": "https://github.com/ahmed-irhain/plc_reader/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmed-irhain/plc_reader.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "nodemon ./src/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "jsmodbus": "^4.0.10",
+    "nodemon": "^3.1.14"
+  }
+}
