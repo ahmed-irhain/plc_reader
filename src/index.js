@@ -88,6 +88,6 @@ app.post("/disconnect/:id", (req, res) => {
 });
 
 
-app.listen(dotenv.PORT, () => {
-  console.log("Server running on port ", dotenv.PORT);
+app.listen(process.env.PORT, () => {
+  console.log("Server running on port ", process.env.PORT);
 });
