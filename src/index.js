@@ -1,6 +1,7 @@
 import net from "net";
 import Modbus from "jsmodbus";
 import express from "express";
+import dotenv from "dotenv/config"
 
 const app = express();
 app.use(express.json());
@@ -87,6 +88,6 @@ app.post("/disconnect/:id", (req, res) => {
 });
 
 
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
+app.listen(dotenv.PORT, () => {
+  console.log("Server running on port ", dotenv.PORT);
 });
