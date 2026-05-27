@@ -46,7 +46,7 @@ app.post("/connect", (req, res) => {
     connections.delete(id);
 
     if (!res.headersSent) {
-      res.status(500).send(err.message);
+      res.status(500).send(err+" - Error in connecting");
     }
   });
 
