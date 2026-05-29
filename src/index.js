@@ -1,7 +1,7 @@
 import net from "net";
 import Modbus from "jsmodbus";
 import express from "express";
-import dotenv from "dotenv/config"
+import dotenv from "dotenv/config";
 
 const app = express();
 app.use(express.json());
@@ -12,22 +12,32 @@ app.post("/connect", (req, res) => {
   const { id, ip, port } = req.body;
 
   if (!id || !ip || !port) {
-    return res.status(400).send("Missing id/ip/port");
+    return res.status(400).json({ error: "Missing id/ip/port" });
   }
 
-  if (connections.has(toString(id))) {
-    return res.status(400).send("ID already connected");
+  const key = String(id);
+
+  if (connections.has(key)) {
+    return res.status(400).json({ error: "ID already connected" });
   }
 
   const socket = new net.Socket();
   const client = new Modbus.client.TCP(socket);
 
-  socket.connect({ host: ip, port:port });
+  socket.setTimeout(5000);
+
+  socket.on("timeout", () => {
+    if (!res.headersSent) {
+      res.status(408).json({ error: "Connection timed out" });
+    }
+    socket.destroy();
+  });
 
   socket.on("connect", () => {
+    socket.setTimeout(0); 
     socket.setKeepAlive(true, 5000);
 
-    connections.set(toString(id), {
+    connections.set(key, {
       socket,
       client,
       ip,
@@ -36,27 +46,28 @@ app.post("/connect", (req, res) => {
     });
 
     console.log("Connected:", id);
-
-    res.send(`connected to ${ip}:${port}`);
+    if (!res.headersSent) {
+      res.json({ message: `Connected to ${ip}:${port}` });
+    }
   });
 
   socket.on("error", (err) => {
-    console.error(err);
-
-    connections.delete(id);
+    console.error("Socket error:", err.message);
+    connections.delete(key);
 
     if (!res.headersSent) {
-      res.status(500).send(err+" - Error in connecting");
+      res.status(500).send('connection error');
     }
   });
 
   socket.on("close", () => {
-    console.log(`connection ${id} closed`);
-    connections.delete(id);
+    console.log(`Connection ${id} closed`);
+    connections.delete(key);
   });
+
+  socket.connect({ host: ip, port: Number(port) });
 });
 
-/* LIST ALL CONNECTIONS */
 app.get("/connections", (req, res) => {
   const list = Array.from(connections.entries()).map(([id, conn]) => ({
     id,
@@ -68,26 +79,24 @@ app.get("/connections", (req, res) => {
   res.json(list);
 });
 
-/* DISCONNECT */
 app.post("/disconnect/:id", (req, res) => {
-  const connection = connections.get(toString(req.params.id));
+  const key = String(req.params.id);
+  const connection = connections.get(key);
+
   if (!connection) {
-    return res.status(404).send("PLC not found");
+    return res.status(404).json({ error: "PLC not found" });
   }
 
   try {
-    connection.socket.end();
     connection.socket.destroy();
   } catch (e) {
     console.error(e);
   }
 
-  connections.delete(req.params.id);
-
-  res.send("Disconnected");
+  connections.delete(key);
+  res.json({ message: "Disconnected" });
 });
 
-
 app.listen(process.env.PORT, () => {
-  console.log("Server running on port ", process.env.PORT);
+  console.log("Server running on port", process.env.PORT);
 });
